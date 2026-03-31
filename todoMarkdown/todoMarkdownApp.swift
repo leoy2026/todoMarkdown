@@ -6,38 +6,56 @@
 //
 
 import SwiftUI
-import SwiftData
-import UniformTypeIdentifiers
+import AppKit
 
 @main
 struct todoMarkdownApp: App {
+    @StateObject private var controller = WorkspaceController()
+
     var body: some Scene {
-        DocumentGroup(editing: .itemDocument, migrationPlan: todoMarkdownMigrationPlan.self) {
-            ContentView()
+        WindowGroup {
+            ContentView(controller: controller)
+        }
+        .commands {
+            CommandGroup(after: .newItem) {
+                Button("Open Workspace...", action: controller.chooseWorkspace)
+                    .keyboardShortcut("o")
+            }
+            CommandGroup(after: .undoRedo) {
+                Button("Undo") {
+                    NSApp.sendAction(Selector(("undo:")), to: nil, from: nil)
+                }
+                .keyboardShortcut("z", modifiers: .command)
+
+                Button("Redo") {
+                    NSApp.sendAction(Selector(("redo:")), to: nil, from: nil)
+                }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+            }
+        }
+
+        Settings {
+            SettingsView(controller: controller)
         }
     }
 }
-
-extension UTType {
-    static var itemDocument: UTType {
-        UTType(importedAs: "com.example.item-document")
+struct SettingsView: View {
+    @ObservedObject var controller: WorkspaceController
+    
+    var body: some View {
+        Form {
+            Slider(
+                value: Binding(
+                    get: { controller.lineSpacing },
+                    set: { controller.updateLineSpacing($0) }
+                ),
+                in: 1.0...2.2
+            ) {
+                Text("Line Spacing:")
+            }
+            .disabled(controller.workspace == nil)
+        }
+        .padding(20)
+        .frame(width: 350, height: 100)
     }
-}
-
-struct todoMarkdownMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [VersionedSchema.Type] = [
-        todoMarkdownVersionedSchema.self,
-    ]
-
-    static var stages: [MigrationStage] = [
-        // Stages of migration between VersionedSchema, if required.
-    ]
-}
-
-struct todoMarkdownVersionedSchema: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
-
-    static var models: [any PersistentModel.Type] = [
-        Item.self,
-    ]
 }

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B35F6E512F67E78E005DF59A /* readme.md in Resources */ = {isa = PBXBuildFile; fileRef = B35F6E502F67E787005DF59A /* readme.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		B35F6E312F67D4C0005DF59A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		B35F6E202F67D4BF005DF59A /* todoMarkdown.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = todoMarkdown.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B35F6E302F67D4C0005DF59A /* todoMarkdownTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = todoMarkdownTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B35F6E3A2F67D4C0005DF59A /* todoMarkdownUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = todoMarkdownUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B35F6E502F67E787005DF59A /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +93,7 @@
 		B35F6E172F67D4BF005DF59A = {
 			isa = PBXGroup;
 			children = (
+				B35F6E502F67E787005DF59A /* readme.md */,
 				B35F6E222F67D4BF005DF59A /* todoMarkdown */,
 				B35F6E332F67D4C0005DF59A /* todoMarkdownTests */,
 				B35F6E3D2F67D4C0005DF59A /* todoMarkdownUITests */,
@@ -225,6 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B35F6E512F67E78E005DF59A /* readme.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
