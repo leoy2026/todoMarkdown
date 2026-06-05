@@ -29,8 +29,8 @@ struct WorkspaceStoreTests {
         let inboxURL = rootURL.appending(path: "Inbox.md")
         let todayURL = rootURL.appending(path: "Today.md")
 
-        try "# Inbox".write(to: inboxURL, atomically: true, encoding: .utf8)
-        try "- [ ] Ship".write(to: todayURL, atomically: true, encoding: .utf8)
+        try "# Inbox\n\n- [ ] Ship".write(to: inboxURL, atomically: true, encoding: .utf8)
+        try "- [ ] Ship\n   \nPlain note".write(to: todayURL, atomically: true, encoding: .utf8)
 
         let store = WorkspaceStore()
         let snapshot = try store.loadWorkspace(at: rootURL)
@@ -38,6 +38,8 @@ struct WorkspaceStoreTests {
         #expect(snapshot.pages.count == 2)
         #expect(snapshot.pages.map(\.fileName) == ["Inbox.md", "Today.md"])
         #expect(snapshot.pages.map(\.trimmedTitle) == ["Inbox", "Today"])
+        #expect(snapshot.pages.map(\.taskCount) == [2, 2])
+        #expect(snapshot.manifest.files.map(\.taskCount) == [2, 2])
     }
 
     @Test
@@ -67,6 +69,21 @@ struct WorkspaceStoreTests {
         #expect(snapshot.pages.first?.fileName == page.fileName)
         #expect(snapshot.pages.first?.title == page.title)
         #expect(snapshot.pages.first?.content == page.content)
+        #expect(snapshot.pages.first?.taskCount == 2)
+        #expect(snapshot.manifest.files.first?.taskCount == 2)
+    }
+
+    @Test
+    func taskCountIgnoresEmptyAndWhitespaceOnlyLines() {
+        let content = """
+        # Inbox
+
+           \t
+        - [ ] Ship
+        Plain note
+        """
+
+        #expect(WorkspaceContentMetrics.taskCount(in: content) == 3)
     }
 
     @Test
@@ -83,9 +100,52 @@ struct WorkspaceStoreTests {
         #expect(!FileManager.default.fileExists(atPath: rootURL.appending(path: page.fileName).path))
     }
 
+    @Test
+    func registeredContentUpdatesCanUndoAndRedo() throws {
+        let rootURL = try temporaryDirectory()
+        let controller = WorkspaceController(
+            store: WorkspaceStore(),
+            bookmarkStore: StaticWorkspaceBookmarkStore(url: rootURL),
+            reminderScheduler: NoopReminderScheduler()
+        )
+
+        controller.performInitialSetup()
+        let pageID = try #require(controller.createPage())
+        #expect(controller.selectedFileID == pageID)
+
+        controller.updateSelectedPageContent("First", registersUndo: true)
+        #expect(controller.loadedContent == "First")
+        #expect(controller.selectedPageUndoManager?.canUndo == true)
+
+        controller.undoSelectedPageChange()
+        #expect(controller.loadedContent == "")
+        #expect(controller.selectedPage?.content == "")
+        #expect(controller.selectedPageUndoManager?.canRedo == true)
+
+        controller.redoSelectedPageChange()
+        #expect(controller.loadedContent == "First")
+        #expect(controller.selectedPage?.content == "First")
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
+    }
+
+    private struct StaticWorkspaceBookmarkStore: WorkspaceBookmarkPersisting {
+        let url: URL?
+
+        func restoreWorkspaceURL() throws -> URL? {
+            url
+        }
+
+        func saveWorkspaceURL(_ url: URL) throws {}
+
+        func clearWorkspaceURL() {}
+    }
+
+    private struct NoopReminderScheduler: ReminderScheduling {
+        func scheduleAfternoonRemindersIfNeeded(from content: String, pageID: UUID, pageTitle: String) {}
     }
 }

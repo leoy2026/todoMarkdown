@@ -47,6 +47,15 @@ struct PreviewSupportTests {
     }
 
     @Test
+    func blankPreviewLinesHideRowActions() {
+        let decoded = PreviewLineCodec.decode("\n   \n- [ ]")
+
+        #expect(decoded[0].hidesPreviewActions)
+        #expect(decoded[1].hidesPreviewActions)
+        #expect(!decoded[2].hidesPreviewActions)
+    }
+
+    @Test
     func dateTagParsingFindsInlineDateTokens() {
         let segments = PreviewDateTagParser.segments(in: "Ship launch #2026-03-20 with QA")
 

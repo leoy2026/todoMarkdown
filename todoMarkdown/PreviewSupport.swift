@@ -35,6 +35,17 @@ struct PreviewLine: Identifiable, Equatable {
     let id = UUID()
     var kind: PreviewLineKind
 
+    var hidesPreviewActions: Bool {
+        switch kind {
+        case .empty:
+            return true
+        case let .paragraph(text):
+            return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .heading, .todo:
+            return false
+        }
+    }
+
     var mentionContent: PreviewMentionContent {
         switch kind {
         case let .heading(_, text):
@@ -310,5 +321,11 @@ enum PreviewInlineParser {
 
     private nonisolated static func remarkRegex() -> NSRegularExpression {
         try! NSRegularExpression(pattern: #"(?<!\S)--(?!\s)([^\s]+)"#)
+    }
+}
+
+enum PreviewDateTagParser {
+    nonisolated static func segments(in text: String) -> [PreviewInlineSegment] {
+        PreviewInlineParser.segments(in: text)
     }
 }

@@ -97,7 +97,7 @@ struct WorkspaceStore {
         }
 
         let manifestURL = manifestURL(for: rootURL)
-        let manifest: WorkspaceManifest
+        var manifest: WorkspaceManifest
 
         if fileManager.fileExists(atPath: manifestURL.path) {
             manifest = try loadManifest(at: rootURL)
@@ -105,6 +105,9 @@ struct WorkspaceStore {
             manifest = try bootstrapManifest(at: rootURL)
             try saveManifest(manifest, at: rootURL)
         }
+
+        var manifestNeedsSave = manifest.version < WorkspaceManifest.currentVersion
+        manifest.version = max(manifest.version, WorkspaceManifest.currentVersion)
 
         let pages = try manifest.files
             .sorted(using: KeyPathComparator(\.sortOrder))
@@ -117,8 +120,21 @@ struct WorkspaceStore {
                     try savePageContent("", fileName: metadata.fileName, at: rootURL)
                 }
                 let content = try String(contentsOf: pageURL, encoding: .utf8)
-                return WorkspacePage(manifestFile: metadata, content: content)
+                var updatedMetadata = metadata
+                let taskCount = WorkspaceContentMetrics.taskCount(in: content)
+                if updatedMetadata.taskCount != taskCount {
+                    updatedMetadata.taskCount = taskCount
+                    if let index = manifest.files.firstIndex(where: { $0.id == metadata.id }) {
+                        manifest.files[index].taskCount = taskCount
+                    }
+                    manifestNeedsSave = true
+                }
+                return WorkspacePage(manifestFile: updatedMetadata, content: content)
             }
+
+        if manifestNeedsSave {
+            try saveManifest(manifest, at: rootURL)
+        }
 
         return WorkspaceSnapshot(rootURL: rootURL, manifest: manifest, pages: pages)
     }
@@ -167,8 +183,9 @@ struct WorkspaceStore {
         .filter { $0.pathExtension.lowercased() == "md" }
         .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
 
-        let imported = markdownFiles.enumerated().map { index, url in
-            WorkspaceManifestFile(
+        let imported = try markdownFiles.enumerated().map { index, url in
+            let content = try String(contentsOf: url, encoding: .utf8)
+            return WorkspaceManifestFile(
                 id: UUID(),
                 fileName: url.lastPathComponent,
                 title: url.deletingPathExtension().lastPathComponent,
@@ -176,7 +193,8 @@ struct WorkspaceStore {
                 isArchived: false,
                 isDeleted: false,
                 createdAt: .now,
-                updatedAt: .now
+                updatedAt: .now,
+                taskCount: WorkspaceContentMetrics.taskCount(in: content)
             )
         }
 
@@ -256,6 +274,11 @@ final class WorkspaceController: ObservableObject {
         return loadedContentPageID == selectedFileID
     }
 
+    var selectedPageUndoManager: UndoManager? {
+        guard let selectedFileID else { return nil }
+        return undoManager(for: selectedFileID)
+    }
+
     func undoManager(for pageID: UUID) -> UndoManager {
         if let existing = pageUndoManagers[pageID] {
             return existing
@@ -265,6 +288,14 @@ final class WorkspaceController: ObservableObject {
         manager.groupsByEvent = true
         pageUndoManagers[pageID] = manager
         return manager
+    }
+
+    func undoSelectedPageChange() {
+        selectedPageUndoManager?.undo()
+    }
+
+    func redoSelectedPageChange() {
+        selectedPageUndoManager?.redo()
     }
 
     func performInitialSetup() {
@@ -451,12 +482,15 @@ final class WorkspaceController: ObservableObject {
         }
     }
 
-    func updateSelectedPageContent(_ content: String) {
+    func updateSelectedPageContent(_ content: String, registersUndo: Bool = false) {
         guard let selectedFileID, var workspace else { return }
         guard let index = workspace.pages.firstIndex(where: { $0.id == selectedFileID }) else { return }
+        let previousContent = workspace.pages[index].content
+        guard previousContent != content else { return }
 
         workspace.pages[index].content = content
         workspace.pages[index].updatedAt = .now
+        workspace.pages[index].taskCount = WorkspaceContentMetrics.taskCount(in: content)
         workspace.manifest.files = workspace.pages.map(\.manifestFile)
         let updatedPage = workspace.pages[index]
         self.workspace = workspace
@@ -469,6 +503,10 @@ final class WorkspaceController: ObservableObject {
             pageID: updatedPage.id,
             pageTitle: updatedPage.trimmedTitle
         )
+
+        if registersUndo {
+            registerContentUndo(pageID: selectedFileID, restoring: previousContent)
+        }
     }
 
     func updateLineSpacing(_ value: Double) {
@@ -627,6 +665,40 @@ final class WorkspaceController: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func restorePageContent(pageID: UUID, to content: String) {
+        guard var workspace, let index = workspace.pages.firstIndex(where: { $0.id == pageID }) else { return }
+        let previousContent = workspace.pages[index].content
+        guard previousContent != content else { return }
+
+        workspace.pages[index].content = content
+        workspace.pages[index].updatedAt = .now
+        workspace.pages[index].taskCount = WorkspaceContentMetrics.taskCount(in: content)
+        workspace.manifest.files = workspace.pages.map(\.manifestFile)
+        let updatedPage = workspace.pages[index]
+        self.workspace = workspace
+
+        if selectedFileID == pageID {
+            loadedContent = content
+            loadedContentPageID = pageID
+        }
+
+        scheduleAutosave(page: updatedPage, in: workspace)
+        reminderScheduler.scheduleAfternoonRemindersIfNeeded(
+            from: updatedPage.content,
+            pageID: updatedPage.id,
+            pageTitle: updatedPage.trimmedTitle
+        )
+        registerContentUndo(pageID: pageID, restoring: previousContent)
+    }
+
+    private func registerContentUndo(pageID: UUID, restoring content: String) {
+        let manager = undoManager(for: pageID)
+        manager.registerUndo(withTarget: self) { controller in
+            controller.restorePageContent(pageID: pageID, to: content)
+        }
+        manager.setActionName("Edit Page")
     }
 
     private var filteredFiles: [WorkspacePage] {

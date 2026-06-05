@@ -8,6 +8,27 @@
 import AppKit
 import SwiftUI
 
+private enum EditorPreviewTypography {
+    static let fontSize: CGFloat = 14
+
+    static let appKitFont = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+    static let appKitEmphasisFont = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .semibold)
+    static let swiftUIFont = Font.system(size: fontSize, weight: .regular, design: .monospaced)
+    static let swiftUIEmphasisFont = Font.system(size: fontSize, weight: .semibold, design: .monospaced)
+
+    static func lineSpacing(for value: Double) -> CGFloat {
+        CGFloat((value - 1.0) * 5)
+    }
+
+    static func paragraphSpacing(for value: Double) -> CGFloat {
+        4 + CGFloat((value - 1.0) * 8)
+    }
+
+    static func rowVerticalPadding(for value: Double) -> CGFloat {
+        paragraphSpacing(for: value) / 2
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var controller: WorkspaceController
     @State private var renamingFileID: UUID?
@@ -132,7 +153,7 @@ struct ContentView: View {
                             PreviewPane(
                                 content: controller.loadedContent,
                                 lineSpacing: controller.lineSpacing,
-                                onUpdateContent: controller.updateSelectedPageContent
+                                onUpdateContent: { controller.updateSelectedPageContent($0, registersUndo: true) }
                             )
                         }
                     }
@@ -308,6 +329,19 @@ private struct SidebarFileRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Spacer(minLength: 8)
+
+                Text(file.taskCount, format: .number)
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color(nsColor: .separatorColor).opacity(0.35))
+                    )
+                    .accessibilityLabel("\(file.taskCount) tasks")
             }
         }
         .padding(.vertical, 4)
@@ -395,29 +429,43 @@ private struct PreviewLineRow: View {
 
             Spacer(minLength: 12)
 
-            HStack(spacing: 8) {
-                Button(action: onInsertBelow) {
-                    Image(systemName: "plus")
-                }
-                .buttonStyle(.borderless)
+            if !line.hidesPreviewActions {
+                HStack(spacing: 8) {
+                    Button(action: onInsertBelow) {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.borderless)
 
-                Button(action: onArchive) {
-                    Image(systemName: "archivebox")
+                    Button(action: onArchive) {
+                        Image(systemName: "archivebox")
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4 + ((lineSpacing - 1.0) * 8))
+        .padding(.vertical, previewVerticalPadding)
+        .listRowSeparator(hidesBottomSeparator ? .hidden : .visible, edges: .bottom)
+    }
+
+    private var previewLineSpacing: CGFloat {
+        EditorPreviewTypography.lineSpacing(for: lineSpacing)
+    }
+
+    private var previewVerticalPadding: CGFloat {
+        EditorPreviewTypography.rowVerticalPadding(for: lineSpacing)
+    }
+
+    private var hidesBottomSeparator: Bool {
+        line.mentionContent.displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     @ViewBuilder
     private var content: some View {
         switch line.kind {
-        case let .heading(level, text):
+        case let .heading(_, text):
             styledText(for: text, fallback: "Untitled Heading")
-                .font(font(for: level))
-                .lineSpacing((lineSpacing - 1.0) * 8)
+                .lineSpacing(previewLineSpacing)
         case let .todo(isCompleted, text):
             HStack(alignment: .top, spacing: 10) {
                 Button(action: onToggleTodo) {
@@ -431,26 +479,16 @@ private struct PreviewLineRow: View {
                     plainColor: isCompleted ? Color.secondary : Color.primary
                 )
                     .strikethrough(isCompleted)
-                    .lineSpacing((lineSpacing - 1.0) * 8)
+                    .lineSpacing(previewLineSpacing)
             }
         case let .paragraph(text):
             styledText(for: text, fallback: " ")
-                .lineSpacing((lineSpacing - 1.0) * 8)
+                .lineSpacing(previewLineSpacing)
                 .textSelection(.enabled)
         case .empty:
             Text(" ")
+                .font(EditorPreviewTypography.swiftUIFont)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func font(for level: Int) -> Font {
-        switch level {
-        case 1:
-            return .system(size: 24, weight: .bold)
-        case 2:
-            return .system(size: 20, weight: .semibold)
-        default:
-            return .system(size: 17, weight: .semibold)
         }
     }
 
@@ -486,15 +524,19 @@ private struct PreviewLineRow: View {
         switch segment.kind {
         case .plain:
             if let plainColor {
-                return Text(segment.text).foregroundColor(plainColor)
+                return Text(segment.text)
+                    .font(EditorPreviewTypography.swiftUIFont)
+                    .foregroundColor(plainColor)
             }
             return Text(segment.text)
+                .font(EditorPreviewTypography.swiftUIFont)
         case .dateTag:
             return Text(segment.text)
+                .font(EditorPreviewTypography.swiftUIEmphasisFont)
                 .foregroundColor(Color(nsColor: .systemOrange))
-                .fontWeight(.semibold)
         case .remarkTag:
             return Text(segment.text)
+                .font(EditorPreviewTypography.swiftUIFont)
                 .foregroundColor(Color(nsColor: .systemGray))
         }
     }
@@ -530,6 +572,14 @@ private struct MentionEditorTextView: NSViewRepresentable {
     @Binding var text: String
     var lineSpacing: Double
     let pageUndoManager: UndoManager
+
+    private var renderedLineSpacing: CGFloat {
+        EditorPreviewTypography.lineSpacing(for: lineSpacing)
+    }
+
+    private var renderedParagraphSpacing: CGFloat {
+        EditorPreviewTypography.paragraphSpacing(for: lineSpacing)
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -607,13 +657,14 @@ private struct MentionEditorTextView: NSViewRepresentable {
         context.coordinator.applyHighlightIfNeeded(to: textView)
     }
 
-    private static let baseFont = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
-    private static let mentionFont = NSFont.monospacedSystemFont(ofSize: 14, weight: .semibold)
+    private static let baseFont = EditorPreviewTypography.appKitFont
+    private static let mentionFont = EditorPreviewTypography.appKitEmphasisFont
 
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: MentionEditorTextView
         var isUpdatingView = false
         private var lastAppliedLineSpacing: Double?
+        private var pendingHighlightWorkItem: DispatchWorkItem?
 
         init(_ parent: MentionEditorTextView) {
             self.parent = parent
@@ -624,7 +675,7 @@ private struct MentionEditorTextView: NSViewRepresentable {
                   let textView = notification.object as? NSTextView else { return }
 
             parent.text = textView.string
-            applyHighlight(to: textView)
+            scheduleHighlight(to: textView)
         }
 
         func applyHighlightIfNeeded(to textView: NSTextView) {
@@ -632,23 +683,45 @@ private struct MentionEditorTextView: NSViewRepresentable {
             applyHighlight(to: textView)
         }
 
+        private func scheduleHighlight(to textView: NSTextView) {
+            pendingHighlightWorkItem?.cancel()
+
+            let expectedString = textView.string
+            let workItem = DispatchWorkItem { [weak self, weak textView] in
+                guard let self,
+                      !self.isUpdatingView,
+                      let textView,
+                      textView.string == expectedString else { return }
+
+                self.applyHighlight(to: textView)
+            }
+
+            pendingHighlightWorkItem = workItem
+            DispatchQueue.main.async(execute: workItem)
+        }
+
         func applyHighlight(to textView: NSTextView) {
             guard let textStorage = textView.textStorage else { return }
 
-            let selectedRanges = textView.selectedRanges
+            pendingHighlightWorkItem?.cancel()
+
             let fullRange = NSRange(location: 0, length: textStorage.length)
             let baseAttributes: [NSAttributedString.Key: Any] = [
                 .font: MentionEditorTextView.baseFont,
                 .foregroundColor: NSColor.labelColor,
                 .paragraphStyle: {
                     let paragraph = NSMutableParagraphStyle()
-                    paragraph.lineSpacing = CGFloat((parent.lineSpacing - 1.0) * 8)
+                    paragraph.lineSpacing = parent.renderedLineSpacing
+                    paragraph.paragraphSpacing = parent.renderedParagraphSpacing
                     return paragraph
                 }()
             ]
+            let selectedRanges = clampedRanges(textView.selectedRanges, upperBound: textStorage.length)
 
             textStorage.beginEditing()
-            textStorage.setAttributes(baseAttributes, range: fullRange)
+            if fullRange.length > 0 {
+                textStorage.setAttributes(baseAttributes, range: fullRange)
+            }
 
             if textView.string.utf16.count <= 12_000 {
                 for range in PreviewMentionParser.mentionRanges(in: textView.string) {
@@ -686,8 +759,23 @@ private struct MentionEditorTextView: NSViewRepresentable {
             }
 
             textStorage.endEditing()
+            textView.typingAttributes = baseAttributes
             textView.selectedRanges = selectedRanges
+            textView.layoutManager?.invalidateLayout(forCharacterRange: fullRange, actualCharacterRange: nil)
+            textView.layoutManager?.invalidateDisplay(forCharacterRange: fullRange)
+            textView.needsDisplay = true
             lastAppliedLineSpacing = parent.lineSpacing
+        }
+
+        private func clampedRanges(_ ranges: [NSValue], upperBound: Int) -> [NSValue] {
+            let clamped = ranges.map { value in
+                let range = value.rangeValue
+                let location = min(max(0, range.location), upperBound)
+                let maxLength = upperBound - location
+                return NSValue(range: NSRange(location: location, length: min(range.length, maxLength)))
+            }
+
+            return clamped.isEmpty ? [NSValue(range: NSRange(location: upperBound, length: 0))] : clamped
         }
     }
 }

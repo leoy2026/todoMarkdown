@@ -8,13 +8,15 @@
 import Foundation
 
 struct WorkspaceManifest: Codable, Equatable {
+    static let currentVersion = 4
+
     var version: Int
     var lastSelectedFileID: UUID?
     var files: [WorkspaceManifestFile]
     var settings: WorkspaceSettings
 
     init(
-        version: Int = 3,
+        version: Int = Self.currentVersion,
         lastSelectedFileID: UUID? = nil,
         files: [WorkspaceManifestFile] = [],
         settings: WorkspaceSettings = .init()
@@ -35,6 +37,7 @@ struct WorkspaceManifestFile: Codable, Equatable, Identifiable {
     var isDeleted: Bool
     var createdAt: Date
     var updatedAt: Date
+    var taskCount: Int = 0
 
     var trimmedTitle: String {
         let candidate = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -69,6 +72,7 @@ struct WorkspacePage: Equatable, Identifiable {
     var isDeleted: Bool
     var createdAt: Date
     var updatedAt: Date
+    var taskCount: Int
 
     init(
         id: UUID = UUID(),
@@ -79,7 +83,8 @@ struct WorkspacePage: Equatable, Identifiable {
         isArchived: Bool = false,
         isDeleted: Bool = false,
         createdAt: Date = .now,
-        updatedAt: Date = .now
+        updatedAt: Date = .now,
+        taskCount: Int? = nil
     ) {
         self.id = id
         self.fileName = fileName ?? "\(id.uuidString).md"
@@ -90,6 +95,7 @@ struct WorkspacePage: Equatable, Identifiable {
         self.isDeleted = isDeleted
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.taskCount = taskCount ?? WorkspaceContentMetrics.taskCount(in: content)
     }
 
     init(manifestFile: WorkspaceManifestFile, content: String) {
@@ -101,6 +107,7 @@ struct WorkspacePage: Equatable, Identifiable {
         isDeleted = manifestFile.isDeleted
         createdAt = manifestFile.createdAt
         updatedAt = manifestFile.updatedAt
+        taskCount = manifestFile.taskCount
         self.content = content
     }
 
@@ -113,7 +120,8 @@ struct WorkspacePage: Equatable, Identifiable {
             isArchived: isArchived,
             isDeleted: isDeleted,
             createdAt: createdAt,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            taskCount: taskCount
         )
     }
 
@@ -132,6 +140,7 @@ extension WorkspaceManifestFile {
         case isDeleted
         case createdAt
         case updatedAt
+        case taskCount
     }
 
     init(from decoder: any Decoder) throws {
@@ -144,6 +153,16 @@ extension WorkspaceManifestFile {
         isDeleted = try container.decodeIfPresent(Bool.self, forKey: .isDeleted) ?? false
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        taskCount = try container.decodeIfPresent(Int.self, forKey: .taskCount) ?? 0
+    }
+}
+
+enum WorkspaceContentMetrics {
+    nonisolated static func taskCount(in content: String) -> Int {
+        content
+            .components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .count
     }
 }
 

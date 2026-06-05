@@ -21,14 +21,14 @@ struct todoMarkdownApp: App {
                 Button("Open Workspace...", action: controller.chooseWorkspace)
                     .keyboardShortcut("o")
             }
-            CommandGroup(after: .undoRedo) {
+            CommandGroup(replacing: .undoRedo) {
                 Button("Undo") {
-                    NSApp.sendAction(Selector(("undo:")), to: nil, from: nil)
+                    performUndo()
                 }
                 .keyboardShortcut("z", modifiers: .command)
 
                 Button("Redo") {
-                    NSApp.sendAction(Selector(("redo:")), to: nil, from: nil)
+                    performRedo()
                 }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
             }
@@ -36,6 +36,18 @@ struct todoMarkdownApp: App {
 
         Settings {
             SettingsView(controller: controller)
+        }
+    }
+
+    private func performUndo() {
+        if !NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) {
+            controller.undoSelectedPageChange()
+        }
+    }
+
+    private func performRedo() {
+        if !NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) {
+            controller.redoSelectedPageChange()
         }
     }
 }
