@@ -5,7 +5,9 @@
 //  Created by Codex on 2026/3/16.
 //
 
+#if os(macOS)
 import AppKit
+#endif
 import Combine
 import Foundation
 import UserNotifications
@@ -39,6 +41,7 @@ struct UserDefaultsWorkspaceBookmarkStore: WorkspaceBookmarkPersisting {
     }
 
     func restoreWorkspaceURL() throws -> URL? {
+#if os(macOS)
         guard let bookmarkData = defaults.data(forKey: bookmarkKey) else { return nil }
 
         var isStale = false
@@ -54,19 +57,38 @@ struct UserDefaultsWorkspaceBookmarkStore: WorkspaceBookmarkPersisting {
         }
 
         return url
+#else
+#if DEBUG
+        // Debug builds can point at a local folder so the iOS UI can be exercised
+        // on simulators without an iCloud account.
+        if ProcessInfo.processInfo.environment["TODOMARKDOWN_DEBUG_WORKSPACE"] != nil,
+           let applicationSupport = FileManager.default.urls(
+               for: .applicationSupportDirectory,
+               in: .userDomainMask
+           ).first {
+            return applicationSupport.appendingPathComponent("TodoMarkdownPreview", isDirectory: true)
+        }
+#endif
+        // iOS opens the fixed iCloud Drive workspace and does not need a user-selected folder bookmark.
+        return nil
+#endif
     }
 
     func saveWorkspaceURL(_ url: URL) throws {
+#if os(macOS)
         let bookmarkData = try url.bookmarkData(
             options: [.withSecurityScope],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         )
         defaults.set(bookmarkData, forKey: bookmarkKey)
+#endif
     }
 
     func clearWorkspaceURL() {
+#if os(macOS)
         defaults.removeObject(forKey: bookmarkKey)
+#endif
     }
 }
 
@@ -137,6 +159,41 @@ struct WorkspaceStore {
         }
 
         return WorkspaceSnapshot(rootURL: rootURL, manifest: manifest, pages: pages)
+    }
+
+    func hasWorkspaceContent(at rootURL: URL) -> Bool {
+        if fileManager.fileExists(atPath: manifestURL(for: rootURL).path) {
+            return true
+        }
+
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: rootURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return false
+        }
+        return contents.contains { $0.pathExtension.lowercased() == "md" }
+    }
+
+    /// Copies a legacy, user-selected workspace into an empty iCloud workspace.
+    /// It deliberately refuses to merge so a device can never silently overwrite
+    /// notes that have already arrived from iCloud.
+    func migrateWorkspace(from sourceURL: URL, to destinationURL: URL) throws {
+        guard sourceURL.standardizedFileURL != destinationURL.standardizedFileURL else { return }
+        guard !hasWorkspaceContent(at: destinationURL) else {
+            throw ICloudWorkspaceError.destinationAlreadyContainsData
+        }
+
+        let contents = try fileManager.contentsOfDirectory(
+            at: sourceURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        for sourceItem in contents {
+            let destinationItem = destinationURL.appending(path: sourceItem.lastPathComponent)
+            try fileManager.copyItem(at: sourceItem, to: destinationItem)
+        }
     }
 
     func saveManifest(_ manifest: WorkspaceManifest, at rootURL: URL) throws {
@@ -226,22 +283,28 @@ final class WorkspaceController: ObservableObject {
     private let store: WorkspaceStore
     private let bookmarkStore: WorkspaceBookmarkPersisting
     private let reminderScheduler: ReminderScheduling
+    private let iCloudWorkspaceLocation: ICloudWorkspaceLocation
     private let ioQueue = DispatchQueue(label: "todoMarkdown.workspace.io", qos: .utility)
     private var accessedWorkspaceURL: URL?
+    private var workspaceFilePresenter: WorkspaceFilePresenter?
     private var performedInitialSetup = false
     private var pendingSelectionPersistWorkItem: DispatchWorkItem?
     private var pendingAutosaveWorkItems: [UUID: DispatchWorkItem] = [:]
+    private var hasUnsavedLocalChanges = false
+    private var pendingExternalReloadWorkItem: DispatchWorkItem?
     private var selectedContentLoadSequence: Int = 0
     private var pageUndoManagers: [UUID: UndoManager] = [:]
 
     init(
         store: WorkspaceStore? = nil,
         bookmarkStore: WorkspaceBookmarkPersisting? = nil,
-        reminderScheduler: ReminderScheduling? = nil
+        reminderScheduler: ReminderScheduling? = nil,
+        iCloudWorkspaceLocation: ICloudWorkspaceLocation? = nil
     ) {
         self.store = store ?? WorkspaceStore()
         self.bookmarkStore = bookmarkStore ?? UserDefaultsWorkspaceBookmarkStore()
         self.reminderScheduler = reminderScheduler ?? UserNotificationReminderScheduler()
+        self.iCloudWorkspaceLocation = iCloudWorkspaceLocation ?? ICloudWorkspaceLocation()
     }
 
     var files: [WorkspacePage] {
@@ -303,16 +366,18 @@ final class WorkspaceController: ObservableObject {
         performedInitialSetup = true
 
         if isRunningUnderTests {
-            _ = restoreWorkspaceIfPossible()
+            if let workspaceURL = restoredWorkspaceURL() {
+                openWorkspace(at: workspaceURL, persistBookmark: true)
+            }
             return
         }
 
-        if !restoreWorkspaceIfPossible() {
-            chooseWorkspace()
-        }
+        let legacyWorkspaceURL = restoredWorkspaceURL()
+        openICloudWorkspace(migrating: legacyWorkspaceURL)
     }
 
     func chooseWorkspace() {
+#if os(macOS)
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
@@ -322,6 +387,10 @@ final class WorkspaceController: ObservableObject {
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
         openWorkspace(at: url, persistBookmark: true)
+#else
+        // iOS always uses the canonical iCloud Drive workspace.
+        openICloudWorkspace(migrating: nil)
+#endif
     }
 
     func createPage() -> UUID? {
@@ -496,6 +565,7 @@ final class WorkspaceController: ObservableObject {
         self.workspace = workspace
         loadedContent = content
         loadedContentPageID = selectedFileID
+        hasUnsavedLocalChanges = true
 
         scheduleAutosave(page: updatedPage, in: workspace)
         reminderScheduler.scheduleAfternoonRemindersIfNeeded(
@@ -524,15 +594,48 @@ final class WorkspaceController: ObservableObject {
         files.first(where: { $0.id == id })?.title ?? "Untitled"
     }
 
-    private func restoreWorkspaceIfPossible() -> Bool {
+    private func restoredWorkspaceURL() -> URL? {
         do {
-            guard let url = try bookmarkStore.restoreWorkspaceURL() else { return false }
-            openWorkspace(at: url, persistBookmark: true)
-            return workspace != nil
+            return try bookmarkStore.restoreWorkspaceURL()
         } catch {
             bookmarkStore.clearWorkspaceURL()
             errorMessage = error.localizedDescription
-            return false
+            return nil
+        }
+    }
+
+    private func openICloudWorkspace(migrating legacyWorkspaceURL: URL?) {
+        do {
+            let iCloudURL = try iCloudWorkspaceLocation.workspaceURL()
+            if let legacyWorkspaceURL, !iCloudWorkspaceLocation.isICloudWorkspace(legacyWorkspaceURL) {
+                let startedAccessing = legacyWorkspaceURL.startAccessingSecurityScopedResource()
+                defer {
+                    if startedAccessing {
+                        legacyWorkspaceURL.stopAccessingSecurityScopedResource()
+                    }
+                }
+                try store.migrateWorkspace(from: legacyWorkspaceURL, to: iCloudURL)
+            }
+            openWorkspace(at: iCloudURL, persistBookmark: true)
+        } catch ICloudWorkspaceError.destinationAlreadyContainsData {
+            // The cloud copy is the source of truth once it exists.
+            do {
+                openWorkspace(at: try iCloudWorkspaceLocation.workspaceURL(), persistBookmark: true)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        } catch {
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["TODOMARKDOWN_DEBUG_WORKSPACE"] == nil {
+                errorMessage = error.localizedDescription
+            }
+            #else
+            errorMessage = error.localizedDescription
+            #endif
+            // Keep an existing workspace usable while the user signs into iCloud.
+            if let legacyWorkspaceURL {
+                openWorkspace(at: legacyWorkspaceURL, persistBookmark: true)
+            }
         }
     }
 
@@ -547,6 +650,7 @@ final class WorkspaceController: ObservableObject {
             }
 
             accessedWorkspaceURL = url
+            configureFilePresenter(for: url)
             workspace = snapshot
             pageUndoManagers.removeAll()
             editorMode = .edit
@@ -595,6 +699,12 @@ final class WorkspaceController: ObservableObject {
             do {
                 try store.savePageContent(page.content, fileName: page.fileName, at: rootURL)
                 try store.saveManifest(manifest, at: rootURL)
+                Task { @MainActor in
+                    if self.workspace?.pages.first(where: { $0.id == page.id })?.content == page.content {
+                        self.hasUnsavedLocalChanges = false
+                    }
+                    self.scheduleExternalReloadIfNeeded()
+                }
             } catch {
                 Task { @MainActor in
                     self.errorMessage = error.localizedDescription
@@ -603,6 +713,52 @@ final class WorkspaceController: ObservableObject {
         }
         pendingAutosaveWorkItems[page.id] = workItem
         ioQueue.asyncAfter(deadline: .now() + 0.25, execute: workItem)
+    }
+
+    private func configureFilePresenter(for url: URL) {
+        if let workspaceFilePresenter {
+            NSFileCoordinator.removeFilePresenter(workspaceFilePresenter)
+        }
+
+        let presenter = WorkspaceFilePresenter(url: url) { [weak self] in
+            Task { @MainActor in
+                self?.scheduleExternalReloadIfNeeded()
+            }
+        }
+        workspaceFilePresenter = presenter
+        NSFileCoordinator.addFilePresenter(presenter)
+    }
+
+    private func scheduleExternalReloadIfNeeded() {
+        guard workspace != nil, !hasUnsavedLocalChanges else { return }
+        pendingExternalReloadWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.reloadWorkspaceAfterExternalChange()
+        }
+        pendingExternalReloadWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
+    private func reloadWorkspaceAfterExternalChange() {
+        guard !hasUnsavedLocalChanges, let currentWorkspace = workspace else { return }
+
+        do {
+            let snapshot = try store.loadWorkspace(at: currentWorkspace.rootURL)
+            let previousSelection = selectedFileID
+            workspace = snapshot
+            if let previousSelection,
+               snapshot.orderedPages.contains(where: { $0.id == previousSelection && !$0.isDeleted }) {
+                selectedFileID = previousSelection
+            } else {
+                selectedFileID = WorkspaceSelectionResolver.restoredSelection(
+                    fileIDs: snapshot.orderedPages.filter { !$0.isDeleted }.map(\.id),
+                    lastSelectedFileID: snapshot.manifest.lastSelectedFileID
+                )
+            }
+            loadSelectedPageContentAsync()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func loadSelectedPageContentAsync() {

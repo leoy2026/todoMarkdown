@@ -5,6 +5,7 @@
 //  Created by Leo Y on 2026/3/16.
 //
 
+#if os(macOS)
 import SwiftUI
 import AppKit
 
@@ -71,3 +72,4 @@ struct SettingsView: View {
         .frame(width: 350, height: 100)
     }
 }
+#endif

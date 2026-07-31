@@ -1,5 +1,13 @@
 
 我要做一个todolist 工具，但是不是一个普通的，而是编辑器式的。
+
+## 数据与 iCloud 同步
+
+- 应用的数据工作区固定在 `iCloud.vip.ceee.todoMarkdown` 容器的 `Documents/todoMarkdown` 中；同一 Apple ID 下、使用相同 Bundle ID 和 iCloud 容器的应用会自动共享它。
+- 已有本地工作区在首次升级启动时会复制到一个空的云端工作区；云端已经有内容时不会覆盖，云端内容优先。
+- 应用会监听 iCloud Drive 的远端变更，并在当前编辑内容已保存后刷新列表与正文。两端同时编辑同一文件时，最终版本和冲突副本由 iCloud Drive 处理。
+- 发布或安装到另一台设备前，需要在 Xcode 的 Signing & Capabilities 中为 `vip.ceee.todoMarkdown` 开启 iCloud，并让签名描述文件包含 `iCloud.vip.ceee.todoMarkdown` 容器。工程已写入对应 entitlements。
+
 1. 这个工程使用xcode 的documentapp 模式做的。
 2. 左右结构，左边是Sidebar 是列表，这些分文件是可以增加创建的。
 3. 右边是上下结构，上面是工具栏，下面是文本编辑框。

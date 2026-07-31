@@ -5,6 +5,7 @@
 //  Created by Leo Y on 2026/3/16.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -102,8 +103,6 @@ struct ContentView: View {
                 Divider()
 
                 archiveDockedView
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
             }
             .navigationTitle(controller.workspaceTitle)
             .navigationSplitViewColumnWidth(min: 220, ideal: 260)
@@ -220,18 +219,48 @@ struct ContentView: View {
     }
 
     private var archiveDockedView: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            DisclosureGroup(isExpanded: $isArchiveExpanded) {
-                VStack(spacing: 0) {
-                    ForEach(controller.archivedFiles) { file in
-                        archivedSidebarRow(for: file)
+        VStack(spacing: 0) {
+            if isArchiveExpanded {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        if controller.archivedFiles.isEmpty {
+                            Text("No archived pages")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                        } else {
+                            ForEach(controller.archivedFiles) { file in
+                                archivedSidebarRow(for: file)
+                                    .padding(.horizontal, 12)
+                            }
+                        }
                     }
                 }
-                .padding(.top, 4)
-            } label: {
-                Label("Archive", systemImage: "archivebox")
-                    .font(.headline)
+                .frame(maxHeight: 280)
+                .padding(.top, 8)
+
+                Divider()
             }
+
+            Button {
+                isArchiveExpanded.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isArchiveExpanded ? "chevron.down" : "chevron.right")
+                        .foregroundStyle(.tertiary)
+                    Label("Archive", systemImage: "archivebox")
+                        .font(.headline)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .accessibilityLabel("Archive")
+            .accessibilityValue(isArchiveExpanded ? "Expanded" : "Collapsed")
         }
     }
 
@@ -273,6 +302,7 @@ struct ContentView: View {
                 focusedTitleFieldID: $focusedTitleFieldID,
                 onCommit: {}
             )
+            .tag(file.id)
             .contextMenu {
                 Button("Restore") {
                     controller.restorePage(id: file.id)
@@ -787,3 +817,4 @@ private final class PageScopedTextView: NSTextView {
         pageUndoManager ?? super.undoManager
     }
 }
+#endif

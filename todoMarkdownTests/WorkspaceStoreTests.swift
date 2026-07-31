@@ -101,6 +101,38 @@ struct WorkspaceStoreTests {
     }
 
     @Test
+    func migratingWorkspaceCopiesDataIntoAnEmptyDestination() throws {
+        let sourceURL = try temporaryDirectory()
+        let destinationURL = try temporaryDirectory()
+        let store = WorkspaceStore()
+        let page = WorkspacePage(title: "Inbox", content: "- [ ] Sync", sortOrder: 0)
+
+        try store.createPage(page, at: sourceURL)
+        try store.saveManifest(WorkspaceManifest(files: [page.manifestFile]), at: sourceURL)
+
+        try store.migrateWorkspace(from: sourceURL, to: destinationURL)
+        let migrated = try store.loadWorkspace(at: destinationURL)
+
+        #expect(migrated.pages.map(\.content) == ["- [ ] Sync"])
+        #expect(migrated.manifest.files.map(\.id) == [page.id])
+    }
+
+    @Test
+    func migratingWorkspaceDoesNotOverwriteExistingCloudData() throws {
+        let sourceURL = try temporaryDirectory()
+        let destinationURL = try temporaryDirectory()
+        let store = WorkspaceStore()
+
+        try "Source".write(to: sourceURL.appending(path: "Source.md"), atomically: true, encoding: .utf8)
+        try "Cloud".write(to: destinationURL.appending(path: "Cloud.md"), atomically: true, encoding: .utf8)
+
+        #expect(throws: ICloudWorkspaceError.destinationAlreadyContainsData) {
+            try store.migrateWorkspace(from: sourceURL, to: destinationURL)
+        }
+        #expect(FileManager.default.fileExists(atPath: destinationURL.appending(path: "Cloud.md").path))
+    }
+
+    @Test
     func registeredContentUpdatesCanUndoAndRedo() throws {
         let rootURL = try temporaryDirectory()
         let controller = WorkspaceController(
