@@ -1,0 +1,19 @@
+app_id: "6760688318"
+bundle_id: vip.ceee.todoMarkdown
+team_id: 9A5H32LZA5
+
+platforms:
+  macos:
+    scheme: todoMarkdown
+    version_file: todoMarkdown.xcodeproj/project.pbxproj
+    version_pattern: 'MARKETING_VERSION = (.+);'
+  ios:
+    scheme: todoMarkdown iOS
+    version_file: todoMarkdown.xcodeproj/project.pbxproj
+    version_pattern: 'MARKETING_VERSION = (.+);'
+
+build_number_file: todoMarkdown.xcodeproj/project.pbxproj
+build_number_pattern: 'CURRENT_PROJECT_VERSION = (\\d+);'
+
+locales:
+  - zh-Hans

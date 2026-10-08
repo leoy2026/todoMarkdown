@@ -1,0 +1,179 @@
+2026-08-26 10:23:05 +0000 [MT] Initial pipeline context: <IDEDistributionProcessingPipelineContext: 0xb7e2a6100; archive(resolved)="<IDEArchive: 0xb7e17fc60>", distributionTask(resolved)="2", distributionDestination(resolved)="1", distributionMethod(resolved)="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team(resolved)="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	Chain (15, self inclusive):
+	<IDEDistributionProcessingPipelineContext: 0xb7e2a6100; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionProcessingPipelineContext: 0xb7e2a6a00; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21ad00; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21aa80; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21a800; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21a580; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21a300; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c21a080; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c219e00; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c218f00; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c218c80; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c218a00; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="<IDEProvisioningBasicTeam: 0xb7ed11280; teamID='9A5H32LZA5', teamName='(null)'>">
+	<IDEDistributionContext: 0xb7c218780; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="(null)">
+	<IDEDistributionContext: 0xb7c218000; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="<IDEDistributionMethodMacAppStoreDistribution: 0xb7c08e720>", team="(null)">
+	<IDEDistributionContext: 0x1012d0650; archive = "<IDEArchive: 0xb7e17fc60>", distributionMethod="(null)", team="(null)">
+</IDEDistributionProcessingPipelineContext: 0xb7e2a6100>
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionCreateDestRootStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionCopyItemStep
+2026-08-26 10:23:05 +0000 [MT] Running /usr/bin/ditto '-V' '/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app' '/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app'
+2026-08-26 10:23:05 +0000  >>> Copying /Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app 
+2026-08-26 10:23:05 +0000  copying file ./Contents/_CodeSignature/CodeResources ... 
+2026-08-26 10:23:05 +0000  3043 bytes for ./Contents/_CodeSignature/CodeResources
+2026-08-26 10:23:05 +0000  copying file ./Contents/MacOS/todoMarkdown ... 
+2026-08-26 10:23:05 +0000  1114784 bytes for ./Contents/MacOS/todoMarkdown
+2026-08-26 10:23:05 +0000  copying file ./Contents/Resources/AppIcon.icns ... 
+2026-08-26 10:23:05 +0000  179904 bytes for ./Contents/Resources/AppIcon.icns
+2026-08-26 10:23:05 +0000  copying file ./Contents/Resources/readme.md ... 
+2026-08-26 10:23:05 +0000  6046 bytes for ./Contents/Resources/readme.md
+2026-08-26 10:23:05 +0000  copying file ./Contents/Resources/Assets.car ... 
+2026-08-26 10:23:05 +0000  3590136 bytes for ./Contents/Resources/Assets.car
+2026-08-26 10:23:05 +0000  copying file ./Contents/embedded.provisionprofile ... 
+2026-08-26 10:23:05 +0000  13889 bytes for ./Contents/embedded.provisionprofile
+2026-08-26 10:23:05 +0000  copying file ./Contents/Info.plist ... 
+2026-08-26 10:23:05 +0000  1775 bytes for ./Contents/Info.plist
+2026-08-26 10:23:05 +0000  copying file ./Contents/PkgInfo ... 
+2026-08-26 10:23:05 +0000  8 bytes for ./Contents/PkgInfo
+2026-08-26 10:23:05 +0000 [MT] /usr/bin/ditto exited with 0
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionEmbedProfileStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionInfoPlistStep
+2026-08-26 10:23:05 +0000 [MT] Skipping setting DTXcodeBuildDistribution because toolsBuildVersionName was nil.
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionItemRemovalStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionAppThinningPlistStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionSymbolsStep
+2026-08-26 10:23:05 +0000 [MT] Writing /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Symbols/A8341D86-A1B7-3713-B93B-6D86AECACA59.symbols
+2026-08-26 10:23:05 +0000 [MT] Writing /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Symbols/6A057CA1-94FF-3543-898F-174C037E75F6.symbols
+2026-08-26 10:23:05 +0000 [MT] Writing /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Symbols/A8341D86-A1B7-3713-B93B-6D86AECACA59.symbols
+2026-08-26 10:23:05 +0000 [MT] Writing /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Symbols/6A057CA1-94FF-3543-898F-174C037E75F6.symbols
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionCopyAppleProvidedContentStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionAppThinningStep
+2026-08-26 10:23:05 +0000 [MT] Skipping step: IDEDistributionAppThinningStep because it said so
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionArchThinningStep
+2026-08-26 10:23:05 +0000 [MT] Archs to thin for item /Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app are []
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionODRStep
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionStripXattrsStep
+2026-08-26 10:23:05 +0000 [MT] Skipping stripping extended attributes because the codesign step will strip them.
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionCodesignStep
+2026-08-26 10:23:05 +0000 [MT] Entitlements for <IDEDistributionItem: 0xb7c14aa60; bundleID='vip.ceee.todoMarkdown', path='<DVTFilePath:0xb7e17fcd0:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xb7c14aac0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0xb7b8180c0; name='Apple Development: Yin Leo (6MUW5L5NKP)', hash='1F981ACE3871FC3425DB6D3E34F3B3DCA911BE0B', serialNumber='4CD82FF239AD0D80F28A6E439ACE4C6D', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2025-12-19 01:38:58 +0000''>', entitlements='{
+    "com.apple.application-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudDocuments
+    );
+    "com.apple.developer.team-identifier" = 9A5H32LZA5;
+    "com.apple.developer.ubiquity-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.ubiquity-kvstore-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.security.app-sandbox" = 1;
+    "com.apple.security.files.user-selected.read-write" = 1;
+}', teamID='9A5H32LZA5', identifier='vip.ceee.todoMarkdown', executablePath='<DVTFilePath:0xb7c148720:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app/Contents/MacOS/todoMarkdown'>', hardenedRuntime='1'>'>: {
+    "com.apple.application-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.developer.icloud-container-environment" = Production;
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudDocuments
+    );
+    "com.apple.developer.team-identifier" = 9A5H32LZA5;
+    "com.apple.developer.ubiquity-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.ubiquity-kvstore-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.security.app-sandbox" = 1;
+    "com.apple.security.files.user-selected.read-write" = 1;
+}
+2026-08-26 10:23:05 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-08-26 10:23:05 +0000 [MT] Entitlements for <IDEDistributionItem: 0xb7c14aa60; bundleID='vip.ceee.todoMarkdown', path='<DVTFilePath:0xb7e17fcd0:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xb7c14aac0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0xb7b818180; name='Apple Development: Yin Leo (6MUW5L5NKP)', hash='1F981ACE3871FC3425DB6D3E34F3B3DCA911BE0B', serialNumber='4CD82FF239AD0D80F28A6E439ACE4C6D', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2025-12-19 01:38:58 +0000''>', entitlements='{
+    "com.apple.application-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudDocuments
+    );
+    "com.apple.developer.team-identifier" = 9A5H32LZA5;
+    "com.apple.developer.ubiquity-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.ubiquity-kvstore-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.security.app-sandbox" = 1;
+    "com.apple.security.files.user-selected.read-write" = 1;
+}', teamID='9A5H32LZA5', identifier='vip.ceee.todoMarkdown', executablePath='<DVTFilePath:0xb7c148720:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app/Contents/MacOS/todoMarkdown'>', hardenedRuntime='1'>'> are: {
+    "com.apple.application-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.developer.icloud-container-environment" = Production;
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudDocuments
+    );
+    "com.apple.developer.team-identifier" = 9A5H32LZA5;
+    "com.apple.developer.ubiquity-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.ubiquity-kvstore-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.security.app-sandbox" = 1;
+    "com.apple.security.files.user-selected.read-write" = 1;
+}
+2026-08-26 10:23:05 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0xb7c14aa60; bundleID='vip.ceee.todoMarkdown', path='<DVTFilePath:0xb7e17fcd0:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xb7c14aac0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0xb7b818180; name='Apple Development: Yin Leo (6MUW5L5NKP)', hash='1F981ACE3871FC3425DB6D3E34F3B3DCA911BE0B', serialNumber='4CD82FF239AD0D80F28A6E439ACE4C6D', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2025-12-19 01:38:58 +0000''>', entitlements='{
+    "com.apple.application-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudDocuments
+    );
+    "com.apple.developer.team-identifier" = 9A5H32LZA5;
+    "com.apple.developer.ubiquity-container-identifiers" =     (
+        "iCloud.vip.ceee.todoMarkdown"
+    );
+    "com.apple.developer.ubiquity-kvstore-identifier" = "9A5H32LZA5.vip.ceee.todoMarkdown";
+    "com.apple.security.app-sandbox" = 1;
+    "com.apple.security.files.user-selected.read-write" = 1;
+}', teamID='9A5H32LZA5', identifier='vip.ceee.todoMarkdown', executablePath='<DVTFilePath:0xb7c148720:'/Users/leo/Documents/wordspace/xcode/todoMarkdown/.build/todoMarkdown.xcarchive/Products/Applications/todoMarkdown.app/Contents/MacOS/todoMarkdown'>', hardenedRuntime='1'>'> to: /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/entitlements~~~8UsgCX
+2026-08-26 10:23:05 +0000 [MT] invoking codesign: <NSConcreteTask: 0xb7c373de0; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    10B733DE91111FF9BABEC6339BDC2D54260584D4,
+    "--entitlements",
+    "/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/entitlements~~~8UsgCX",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app"
+)'>
+2026-08-26 10:23:05 +0000 [MT] codesign output: /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app: replacing existing signature
+/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app: signed app bundle with Mach-O universal (x86_64 arm64) [vip.ceee.todoMarkdown]
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionZipODRItemStep
+2026-08-26 10:23:05 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-08-26 10:23:05 +0000 [MT] Processing step: IDEDistributionCreatePKGStep
+2026-08-26 10:23:05 +0000 [MT] Running /usr/bin/productbuild '--sign' '3rd Party Mac Developer Installer: Yin Leo (9A5H32LZA5)' '--symbolication' '/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Symbols' '--component' '/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app' '/Applications' '/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Packages/todoMarkdown.pkg'
+2026-08-26 10:23:06 +0000  productbuild: Adding component at /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app
+productbuild: Signing product with identity "3rd Party Mac Developer Installer: Yin Leo (9A5H32LZA5)" from keychain /Users/leo/Library/Keychains/login.keychain-db
+productbuild: Adding certificate "Apple Worldwide Developer Relations Certification Authority"
+productbuild: Adding certificate "Apple Root CA"
+productbuild: Wrote product to /var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Packages/todoMarkdown.pkg
+productbuild: Supported OS versions: [Min: 26.2, Before: None]
+2026-08-26 10:23:06 +0000 [MT] /usr/bin/productbuild exited with 0
+2026-08-26 10:23:06 +0000 [MT] Processing step: IDEDistributionAppStoreInformationStep
+2026-08-26 10:23:06 +0000 [MT] Skipping step: IDEDistributionAppStoreInformationStep because it said so
+2026-08-26 10:23:06 +0000 [MT] Processing step: IDEDistributionGenerateProcessedDistributionItems
+2026-08-26 10:23:06 +0000 [MT] IDEDistributionItem init <DVTFilePath:0xb7efd23e0:'/var/folders/xs/yzh81xgj6_lbktr36nn4prs00000gn/T/XcodeDistPipeline.~~~4BLwn4/Root/Applications/todoMarkdown.app'>
+2026-08-26 10:23:06 +0000 [MT] Processing step: IDEDistributionCreateManifestStep
+2026-08-26 10:23:06 +0000 [MT] Skipping step: IDEDistributionCreateManifestStep because it said so

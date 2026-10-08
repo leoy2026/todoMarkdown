@@ -734,6 +734,7 @@ private struct MentionEditorTextView: NSViewRepresentable {
             guard let textStorage = textView.textStorage else { return }
 
             pendingHighlightWorkItem?.cancel()
+            let preservedScrollOrigin = textView.enclosingScrollView?.contentView.bounds.origin
 
             let fullRange = NSRange(location: 0, length: textStorage.length)
             let baseAttributes: [NSAttributedString.Key: Any] = [
@@ -794,6 +795,13 @@ private struct MentionEditorTextView: NSViewRepresentable {
             textView.layoutManager?.invalidateLayout(forCharacterRange: fullRange, actualCharacterRange: nil)
             textView.layoutManager?.invalidateDisplay(forCharacterRange: fullRange)
             textView.needsDisplay = true
+
+            if let preservedScrollOrigin,
+               let scrollView = textView.enclosingScrollView {
+                scrollView.contentView.setBoundsOrigin(preservedScrollOrigin)
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+            }
+
             lastAppliedLineSpacing = parent.lineSpacing
         }
 

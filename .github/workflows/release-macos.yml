@@ -1,0 +1,88 @@
+name: Release macOS
+
+# 推 v* tag 时打包 macOS app，也可以手动触发试跑。
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner 镜像（若 macos-26 上没有 Xcode 27，可换成 macos-27 等）"
+        default: macos-26
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT: todoMarkdown.xcodeproj
+  SCHEME: todoMarkdown
+  APP_NAME: todoMarkdown
+
+jobs:
+  build:
+    # 工程 MACOSX_DEPLOYMENT_TARGET = 26.2，需要 Xcode 27 / macOS 26 SDK
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # git describe 需要 tag 历史
+
+      - name: Select newest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version | cat
+          xcrun --sdk macosx --show-sdk-version
+
+      - name: Build (Release, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Package app as zip
+        run: |
+          APP="$RUNNER_TEMP/dd/Build/Products/Release/$APP_NAME.app"
+          test -d "$APP" || { echo "::error::$APP not found"; exit 1; }
+
+          # tag 推送用 tag 名，手动触发时用 git describe 兜底
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="$GITHUB_REF_NAME"
+          else
+            VERSION="$(git describe --tags --always)"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+          # ditto 保留资源分叉与可执行权限，比 zip 命令更适合 .app
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$APP_NAME-$VERSION-macos.zip"
+          shasum -a 256 "$APP_NAME-$VERSION-macos.zip" | tee "$APP_NAME-$VERSION-macos.zip.sha256"
+          ls -lh "$APP_NAME-$VERSION-macos.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.VERSION }}-macos
+          path: |
+            ${{ env.APP_NAME }}-${{ env.VERSION }}-macos.zip
+            ${{ env.APP_NAME }}-${{ env.VERSION }}-macos.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0 # 已经是 zip，不用再压一层

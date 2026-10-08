@@ -159,6 +159,28 @@ struct WorkspaceStoreTests {
         #expect(controller.selectedPage?.content == "First")
     }
 
+    @Test
+    func archivingPageByIDUsesThePageIdentityWhenSearchIsActive() throws {
+        let rootURL = try temporaryDirectory()
+        let controller = WorkspaceController(
+            store: WorkspaceStore(),
+            bookmarkStore: StaticWorkspaceBookmarkStore(url: rootURL),
+            reminderScheduler: NoopReminderScheduler()
+        )
+
+        controller.performInitialSetup()
+        let firstPageID = try #require(controller.createPage())
+        controller.renamePage(id: firstPageID, to: "项目计划")
+        let secondPageID = try #require(controller.createPage())
+        controller.renamePage(id: secondPageID, to: "购物清单")
+        controller.searchText = "购物"
+
+        controller.archivePage(id: firstPageID)
+
+        #expect(controller.files.first(where: { $0.id == firstPageID })?.isArchived == true)
+        #expect(controller.activeFiles.contains(where: { $0.id == secondPageID }))
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

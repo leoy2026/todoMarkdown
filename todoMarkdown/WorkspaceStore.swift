@@ -66,7 +66,12 @@ struct UserDefaultsWorkspaceBookmarkStore: WorkspaceBookmarkPersisting {
                for: .applicationSupportDirectory,
                in: .userDomainMask
            ).first {
-            return applicationSupport.appendingPathComponent("TodoMarkdownPreview", isDirectory: true)
+            let previewWorkspace = applicationSupport.appendingPathComponent("TodoMarkdownPreview", isDirectory: true)
+            try? FileManager.default.createDirectory(
+                at: previewWorkspace,
+                withIntermediateDirectories: true
+            )
+            return previewWorkspace
         }
 #endif
         // iOS opens the fixed iCloud Drive workspace and does not need a user-selected folder bookmark.
@@ -427,6 +432,12 @@ final class WorkspaceController: ObservableObject {
         archivePages(offsets: IndexSet(integer: indexOfActivePage(withID: selectedFileID)))
     }
 
+    func archivePage(id: UUID) {
+        let activePages = files.filter { !$0.isArchived }
+        guard let index = activePages.firstIndex(where: { $0.id == id }) else { return }
+        archivePages(offsets: IndexSet(integer: index))
+    }
+
     func archivePages(offsets: IndexSet) {
         guard var workspace, !offsets.isEmpty else { return }
         let activePages = workspace.orderedPages.filter { !$0.isArchived && !$0.isDeleted }
@@ -529,6 +540,7 @@ final class WorkspaceController: ObservableObject {
     }
 
     func movePages(from source: IndexSet, to destination: Int) {
+        guard searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard var workspace else { return }
         var pages = workspace.orderedPages.filter { !$0.isArchived && !$0.isDeleted }
         move(&pages, fromOffsets: source, toOffset: destination)
@@ -703,7 +715,6 @@ final class WorkspaceController: ObservableObject {
                     if self.workspace?.pages.first(where: { $0.id == page.id })?.content == page.content {
                         self.hasUnsavedLocalChanges = false
                     }
-                    self.scheduleExternalReloadIfNeeded()
                 }
             } catch {
                 Task { @MainActor in
@@ -744,6 +755,13 @@ final class WorkspaceController: ObservableObject {
 
         do {
             let snapshot = try store.loadWorkspace(at: currentWorkspace.rootURL)
+            // The file presenter also reports the files written by this process.
+            // If the persisted page data is already what we have in memory, this
+            // is our own autosave and must not rebuild the editor.
+            guard workspaceNeedsExternalReload(current: currentWorkspace, incoming: snapshot) else {
+                return
+            }
+
             let previousSelection = selectedFileID
             workspace = snapshot
             if let previousSelection,
@@ -758,6 +776,25 @@ final class WorkspaceController: ObservableObject {
             loadSelectedPageContentAsync()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func workspaceNeedsExternalReload(
+        current: WorkspaceSnapshot,
+        incoming: WorkspaceSnapshot
+    ) -> Bool {
+        guard current.manifest.settings == incoming.manifest.settings else { return true }
+        guard current.pages.count == incoming.pages.count else { return true }
+
+        return zip(current.pages, incoming.pages).contains { currentPage, incomingPage in
+            currentPage.id != incomingPage.id
+                || currentPage.fileName != incomingPage.fileName
+                || currentPage.title != incomingPage.title
+                || currentPage.content != incomingPage.content
+                || currentPage.sortOrder != incomingPage.sortOrder
+                || currentPage.isArchived != incomingPage.isArchived
+                || currentPage.isDeleted != incomingPage.isDeleted
+                || currentPage.taskCount != incomingPage.taskCount
         }
     }
 
