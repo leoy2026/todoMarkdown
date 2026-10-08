@@ -1,6 +1,7 @@
 name: Release macOS
 
-# 推 v* tag 时打包 macOS app，也可以手动触发试跑。
+# 推 v* tag 时构建 macOS app、打成 dmg 并发布到 GitHub Releases。
+# 手动触发只出 artifact，不发 Release（因为分支上没有 tag）。
 on:
   push:
     tags:
@@ -12,8 +13,9 @@ on:
         default: macos-26
         type: string
 
+# 创建/更新 Release 需要 contents: write
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -58,31 +60,56 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             clean build
 
-      - name: Package app as zip
+      - name: Package app as dmg
         run: |
           APP="$RUNNER_TEMP/dd/Build/Products/Release/$APP_NAME.app"
           test -d "$APP" || { echo "::error::$APP not found"; exit 1; }
 
           # tag 推送用 tag 名，手动触发时用 git describe 兜底
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             VERSION="$GITHUB_REF_NAME"
           else
             VERSION="$(git describe --tags --always)"
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "DMG=$APP_NAME-$VERSION-macos.dmg" >> "$GITHUB_ENV"
 
-          # ditto 保留资源分叉与可执行权限，比 zip 命令更适合 .app
-          ditto -c -k --sequesterRsrc --keepParent "$APP" "$APP_NAME-$VERSION-macos.zip"
-          shasum -a 256 "$APP_NAME-$VERSION-macos.zip" | tee "$APP_NAME-$VERSION-macos.zip.sha256"
-          ls -lh "$APP_NAME-$VERSION-macos.zip"
+          # dmg 里放 app + 指向 /Applications 的快捷方式，用户可以拖拽安装
+          STAGING="$RUNNER_TEMP/dmg"
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING"
+          cp -R "$APP" "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder "$STAGING" \
+            -ov -format UDZO \
+            "$APP_NAME-$VERSION-macos.dmg"
+
+          hdiutil verify "$APP_NAME-$VERSION-macos.dmg"
+          shasum -a 256 "$APP_NAME-$VERSION-macos.dmg" | tee "$APP_NAME-$VERSION-macos.dmg.sha256"
+          ls -lh "$APP_NAME-$VERSION-macos.dmg"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}-${{ env.VERSION }}-macos
           path: |
-            ${{ env.APP_NAME }}-${{ env.VERSION }}-macos.zip
-            ${{ env.APP_NAME }}-${{ env.VERSION }}-macos.zip.sha256
+            ${{ env.DMG }}
+            ${{ env.DMG }}.sha256
           if-no-files-found: error
           retention-days: 30
-          compression-level: 0 # 已经是 zip，不用再压一层
+
+      # 只有 tag 推送才建 Release；workflow_dispatch 时 github.ref_type 是 branch
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ env.VERSION }}
+          files: |
+            ${{ env.DMG }}
+            ${{ env.DMG }}.sha256
+          generate_release_notes: true
+          draft: false
+          prerelease: false
